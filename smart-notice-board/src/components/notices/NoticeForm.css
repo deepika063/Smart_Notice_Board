@@ -1,0 +1,344 @@
+.notice-form {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 800px;
+  margin: 0 auto;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notice-form h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Form Layout */
+.notice-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-group label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-group label::before {
+  content: '•';
+  color: #667eea;
+  font-size: 1.2rem;
+}
+
+/* Form Row for side-by-side elements */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Input Fields */
+.notice-form input,
+.notice-form textarea,
+.notice-form select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  color: #ffffff;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.notice-form input::placeholder,
+.notice-form textarea::placeholder {
+  color: #888;
+}
+
+.notice-form input:focus,
+.notice-form textarea:focus,
+.notice-form select:focus {
+  outline: none;
+  border-color: rgba(102, 126, 234, 0.6);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.notice-form textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+/* Select Styling */
+.notice-form select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23667eea'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 3rem;
+}
+
+/* Schedule Options */
+.notice-form .form-group:last-of-type {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.notice-form .form-group:last-of-type label {
+  margin-bottom: 0.5rem;
+}
+
+.notice-form .form-group:last-of-type > div {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.notice-form .form-group:last-of-type select {
+  min-width: 180px;
+}
+
+.notice-form .form-group:last-of-type input[type="datetime-local"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1rem;
+}
+
+.btn {
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notice-form {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
+  
+  .notice-form h2 {
+    font-size: 1.5rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .notice-form .form-group:last-of-type > div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .notice-form .form-group:last-of-type select,
+  .notice-form .form-group:last-of-type input[type="datetime-local"] {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .notice-form {
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
+  }
+  
+  .notice-form h2 {
+    font-size: 1.35rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .notice-form form {
+    gap: 1.25rem;
+  }
+  
+  .form-group {
+    gap: 0.5rem;
+  }
+  
+  .notice-form input,
+  .notice-form textarea,
+  .notice-form select {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Loading State */
+.notice-form.loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.notice-form.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Validation States */
+.notice-form input:invalid:not(:focus),
+.notice-form textarea:invalid:not(:focus) {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.notice-form input:valid:not(:focus),
+.notice-form textarea:valid:not(:focus) {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.notice-form input:focus,
+.notice-form textarea:focus,
+.notice-form select:focus {
+  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .notice-form {
+    background: #1a1a1a;
+    border: 2px solid #333;
+  }
+  
+  .notice-form input,
+  .notice-form textarea,
+  .notice-form select {
+    border: 2px solid #555;
+    background: #0a0a0a;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .notice-form,
+  .btn,
+  .notice-form input,
+  .notice-form textarea,
+  .notice-form select {
+    transition: none;
+    animation: none;
+  }
+  
+  .btn::before {
+    display: none;
+  }
+}
