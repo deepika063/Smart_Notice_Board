@@ -59,19 +59,9 @@ const connectWithRetry = () => {
 connectWithRetry();
 
 // ======================
-// 🟢 Socket.io Initialization (with proper CORS setup)
+// 🟢 Socket.io Initialization (through socketService)
 // ======================
-const { Server } = require('socket.io');
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL,
-    methods: ['GET', 'POST'],
-    credentials: true
-  },
-  path: process.env.SOCKET_PATH || '/socket.io'
-});
-
-socketService.init(io);
+const io = socketService.init(server);
 app.set('io', io);
 
 // ======================

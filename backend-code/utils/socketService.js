@@ -1,17 +1,20 @@
-const socketIO = require('socket.io');
+// utils/socketService.js
+const { Server } = require('socket.io');
 
 let io;
 
-const initSocket = (server) => {
-  io = socketIO(server, {
+const init = (server) => {
+  io = new Server(server, {
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-      methods: ['GET', 'POST']
-    }
+      methods: ['GET', 'POST'],
+      credentials: true
+    },
+    path: process.env.SOCKET_PATH || '/socket.io'
   });
 
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    console.log('🟢 Client connected:', socket.id);
 
     // Join user's personal room for targeted notifications
     socket.on('join-room', (userId) => {
@@ -22,12 +25,14 @@ const initSocket = (server) => {
     });
 
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id);
+      console.log('🔴 Client disconnected:', socket.id);
     });
   });
 
   return io;
 };
+
+// ======== Notification Emitters ======== //
 
 const notifyNewNotice = (notice) => {
   if (io) {
@@ -54,7 +59,7 @@ const notifyDeletedNotice = (noticeId) => {
 const notifyNewComment = (comment, notice, targetUserId) => {
   if (io) {
     io.emit('notification-update');
-    
+
     if (targetUserId) {
       io.to(`user-${targetUserId}`).emit('new-comment', {
         comment,
@@ -62,7 +67,7 @@ const notifyNewComment = (comment, notice, targetUserId) => {
         message: `New comment on your notice: ${notice.title}`
       });
     }
-    
+
     io.emit('new-comment');
   }
 };
@@ -81,8 +86,9 @@ const notifyDeletedComment = (commentId) => {
   }
 };
 
+// ======== Exported Functions ======== //
 module.exports = {
-  initSocket,
+  init,
   notifyNewNotice,
   notifyUpdatedNotice,
   notifyDeletedNotice,
