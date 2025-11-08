@@ -23,20 +23,22 @@ const notificationRoutes = require('./routes/notifications');
 const dashboardRoutes = require('./routes/dashboard');
 
 // ======================
-// 🟢 Middleware (CORS + JSON Parsing)
+// 🟢 Middleware (CORS Fixed)
 // ======================
 app.use(cors({
-  origin:
-    process.env.NODE_ENV === 'production'
-      ? process.env.FRONTEND_URL
-      : '*',
+  origin: [
+    process.env.FRONTEND_URL,  // Deployed frontend
+    'http://localhost:3000'    // Local frontend
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // ======================
 // 🟢 MongoDB Connection

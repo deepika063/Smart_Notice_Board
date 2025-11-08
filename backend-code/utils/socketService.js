@@ -1,39 +1,39 @@
-// utils/socketService.js
-const { Server } = require('socket.io');
+const socketIO = require('socket.io');
 
 let io;
 
-const init = (server) => {
-  io = new Server(server, {
+const initSocket = (server) => {
+  io = socketIO(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: [
+        process.env.FRONTEND_URL,
+        'http://localhost:3000'
+      ],
       methods: ['GET', 'POST'],
       credentials: true
-    },
-    path: process.env.SOCKET_PATH || '/socket.io'
+    }
   });
 
   io.on('connection', (socket) => {
-    console.log('🟢 Client connected:', socket.id);
+    console.log('✅ Socket connected:', socket.id);
 
     // Join user's personal room for targeted notifications
     socket.on('join-room', (userId) => {
       if (userId) {
         socket.join(`user-${userId}`);
-        console.log(`User ${userId} joined room user-${userId}`);
+        console.log(`🟢 User ${userId} joined room user-${userId}`);
       }
     });
 
     socket.on('disconnect', () => {
-      console.log('🔴 Client disconnected:', socket.id);
+      console.log('🔴 Socket disconnected:', socket.id);
     });
   });
 
   return io;
 };
 
-// ======== Notification Emitters ======== //
-
+// ====== Notification Helpers ======
 const notifyNewNotice = (notice) => {
   if (io) {
     io.emit('notice-update');
@@ -45,30 +45,24 @@ const notifyNewNotice = (notice) => {
 };
 
 const notifyUpdatedNotice = (notice) => {
-  if (io) {
-    io.emit('notice-update');
-  }
+  if (io) io.emit('notice-update');
 };
 
 const notifyDeletedNotice = (noticeId) => {
-  if (io) {
-    io.emit('notice-update');
-  }
+  if (io) io.emit('notice-update');
 };
 
 const notifyNewComment = (comment, notice, targetUserId) => {
   if (io) {
     io.emit('notification-update');
-
+    
     if (targetUserId) {
       io.to(`user-${targetUserId}`).emit('new-comment', {
         comment,
         notice,
-        message: `New comment on your notice: ${notice.title}`
+        message: `💬 New comment on your notice: ${notice.title}`
       });
     }
-
-    io.emit('new-comment');
   }
 };
 
@@ -86,9 +80,8 @@ const notifyDeletedComment = (commentId) => {
   }
 };
 
-// ======== Exported Functions ======== //
 module.exports = {
-  init,
+  initSocket,
   notifyNewNotice,
   notifyUpdatedNotice,
   notifyDeletedNotice,
