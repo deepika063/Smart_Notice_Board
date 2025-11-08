@@ -11,24 +11,16 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const { page = 1, limit = 20, unreadOnly = false } = req.query;
     const query = { user: req.user._id };
-
-    if (unreadOnly === 'true') {
-      query.isRead = false;
-    }
+    if (unreadOnly === 'true') query.isRead = false;
 
     const skip = (page - 1) * limit;
-
     const notifications = await Notification.find(query)
       .populate('relatedNotice', 'title category')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
 
-    const unreadCount = await Notification.countDocuments({
-      user: req.user._id,
-      isRead: false
-    });
-
+    const unreadCount = await Notification.countDocuments({ user: req.user._id, isRead: false });
     const total = await Notification.countDocuments(query);
 
     res.json({
@@ -45,10 +37,12 @@ router.get('/', authenticate, async (req, res) => {
     console.error('Get Notifications Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch notifications'
+      message: 'Failed to fetch notifications',
+      error: error.message
     });
   }
 });
+
 
 // ======================
 // 🟢 Mark Notification as Read
