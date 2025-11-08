@@ -1,131 +1,142 @@
-import React, { createContext, useState, useEffect } from "react";
+// routes/notifications.js
+const express = require('express');
+const router = express.Router();
+const Notification = require('../models/Notification');
+const { authenticate } = require('../middleware/auth');
 
-export const NotificationContext = createContext();
+// ======================
+// 🟢 Get User Notifications
+// ======================
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+    const query = { user: req.user._id };
 
-export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+    if (unreadOnly === 'true') {
+      query.isRead = false;
+    }
 
-  // ✅ Fetch notifications securely
-  const fetchNotifications = async () => {
-    try {
-      const token = localStorage.getItem("token"); // get JWT token
-      if (!token) {
-        console.warn("⚠️ No token found, skipping notifications fetch");
-        setLoading(false);
-        return;
+    const skip = (page - 1) * limit;
+
+    const notifications = await Notification.find(query)
+      .populate('relatedNotice', 'title category')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const unreadCount = await Notification.countDocuments({
+      user: req.user._id,
+      isRead: false
+    });
+
+    const total = await Notification.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: notifications,
+      unreadCount,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
       }
+    });
+  } catch (error) {
+    console.error('Get Notifications Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch notifications'
+    });
+  }
+});
 
-      const res = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/notifications`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // ✅ Include JWT for authentication
-          },
-          credentials: "include",
-        }
-      );
+// ======================
+// 🟢 Mark Notification as Read
+// ======================
+router.put('/:id/read', authenticate, async (req, res) => {
+  try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
 
-      if (!res.ok) {
-        throw new Error(`Failed to fetch notifications: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setNotifications(data.data || []);
-        setUnreadCount(data.unreadCount || 0);
-      } else {
-        console.error("Notification fetch error:", data.message);
-      }
-
-    } catch (error) {
-      console.error("Failed to load notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ Mark a notification as read
-  const markAsRead = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/${id}/read`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
       });
-
-      // Refresh after marking as read
-      fetchNotifications();
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
     }
-  };
 
-  // ✅ Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    notification.isRead = true;
+    notification.readAt = new Date();
+    await notification.save();
 
-      await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/read-all`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
+    res.json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+  } catch (error) {
+    console.error('Mark Read Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark notification as read'
+    });
+  }
+});
+
+// ======================
+// 🟢 Mark All Notifications as Read
+// ======================
+router.put('/read-all', authenticate, async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { user: req.user._id, isRead: false },
+      { isRead: true, readAt: new Date() }
+    );
+
+    res.json({
+      success: true,
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Mark All Read Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all notifications as read'
+    });
+  }
+});
+
+// ======================
+// 🟢 Delete Notification
+// ======================
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      user: req.user._id
+    });
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
       });
-
-      fetchNotifications();
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
     }
-  };
 
-  // ✅ Delete a notification
-  const deleteNotification = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    await notification.deleteOne();
 
-      await fetch(`${process.env.REACT_APP_API_URL}/api/notifications/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-        },
-      });
+    res.json({
+      success: true,
+      message: 'Notification deleted'
+    });
+  } catch (error) {
+    console.error('Delete Notification Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete notification'
+    });
+  }
+});
 
-      // Refresh after deletion
-      setNotifications((prev) => prev.filter((n) => n._id !== id));
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        loading,
-        fetchNotifications,
-        markAsRead,
-        markAllAsRead,
-        deleteNotification,
-      }}
-    >
-      {children}
-    </NotificationContext.Provider>
-  );
-};
+module.exports = router;
