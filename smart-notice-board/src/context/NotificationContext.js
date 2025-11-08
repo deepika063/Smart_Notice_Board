@@ -4,6 +4,10 @@ import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
+// ✅ Your backend API base URL
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {
@@ -25,30 +29,23 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const addNotification = (notification) => {
-    // Support both string messages and object notifications
     const payload = typeof notification === 'string' ? { message: notification } : (notification || {});
-
     const newNotification = {
       id: Date.now(),
       timestamp: new Date(),
       read: false,
       ...payload
     };
-    
-    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
-    setUnreadCount(prev => prev + 1);
+
+    setNotifications((prev) => [newNotification, ...prev.slice(0, 9)]);
+    setUnreadCount((prev) => prev + 1);
   };
 
-  // Socket.io: connect and listen for server-sent notifications
+  // Socket.io connection
   useEffect(() => {
-    // We still want to load notifications even for demo users (no server token)
-    // but only open socket when authenticated (user with token)
     loadNotifications();
     if (!user) return;
 
-    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
-
-    // Initialize socket
     const socket = ioClient(SOCKET_URL, {
       transports: ['websocket', 'polling']
     });
@@ -56,18 +53,13 @@ export const NotificationProvider = ({ children }) => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      // Join the user's personal room so server can target them
       const joinId = user?.id || user?._id || null;
-      if (joinId) {
-        socket.emit('join-room', joinId);
-      }
+      if (joinId) socket.emit('join-room', joinId);
     });
 
     socket.on('new-notice', (payload) => {
-      // Payload expected: { notice, message }
       const notice = payload?.notice || {};
       const message = payload?.message || `New notice: ${notice.title || ''}`;
-
       addNotification({
         title: notice.title || 'New Notice',
         message,
@@ -75,12 +67,10 @@ export const NotificationProvider = ({ children }) => {
       });
     });
 
-    // New comment notifications (for replies or comments on user's notices)
     socket.on('new-comment', (payload) => {
       const comment = payload?.comment || {};
       const notice = payload?.notice || {};
       const message = payload?.message || `${comment.author?.name || 'Someone'} commented on ${notice.title || 'a notice'}`;
-
       addNotification({
         title: 'New Comment',
         message,
@@ -88,27 +78,22 @@ export const NotificationProvider = ({ children }) => {
       });
     });
 
-    socket.on('disconnect', () => {
-      // noop for now
-    });
+    socket.on('disconnect', () => {});
 
-    return () => {
-      if (socket) {
-        socket.disconnect();
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => socket.disconnect();
   }, [user]);
 
-  // Load notifications from backend if authenticated, otherwise fallback to recent notices
+  // Load notifications
   const loadNotifications = async () => {
     try {
       const headers = getAuthHeaders();
+
       if (headers.Authorization) {
-        const resp = await fetch('/api/notifications?limit=10', { headers });
+        const resp = await fetch(`${API_BASE}/api/notifications?limit=10`, { headers });
         const data = await resp.json();
+
         if (data.success) {
-          const normalized = (data.data || []).map(n => ({
+          const normalized = (data.data || []).map((n) => ({
             id: n._id,
             title: n.relatedNotice?.title || n.title || n.message,
             message: n.message,
@@ -122,12 +107,15 @@ export const NotificationProvider = ({ children }) => {
         }
       }
 
-      // Fallback: fetch recent public notices and convert to notifications
+      // Fallback to public notices
       const dept = (user && user.department) ? user.department : 'All Departments';
-      const noticesResp = await fetch(`/api/notices?department=${encodeURIComponent(dept)}&limit=5`);
+      const noticesResp = await fetch(
+        `${API_BASE}/api/notices?department=${encodeURIComponent(dept)}&limit=5`
+      );
       const noticesData = await noticesResp.json();
+
       if (noticesData.success) {
-        const notifs = (noticesData.data || []).map(n => ({
+        const notifs = (noticesData.data || []).map((n) => ({
           id: n._id,
           title: n.title,
           message: `New notice: ${n.title}`,
@@ -137,7 +125,6 @@ export const NotificationProvider = ({ children }) => {
         }));
         setNotifications(notifs);
         setUnreadCount(notifs.length);
-        return;
       }
     } catch (err) {
       console.error('Failed to load notifications:', err);
@@ -145,31 +132,26 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const markAsRead = (id) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    // If authenticated, notify backend and refresh
     const headers = getAuthHeaders();
     if (headers.Authorization) {
-      fetch(`/api/notifications/${id}/read`, { method: 'PUT', headers })
+      fetch(`${API_BASE}/api/notifications/${id}/read`, { method: 'PUT', headers })
         .then(() => loadNotifications())
-        .catch(err => console.error('Mark as read failed:', err));
+        .catch((err) => console.error('Mark as read failed:', err));
     }
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
 
     const headers = getAuthHeaders();
     if (headers.Authorization) {
-      fetch('/api/notifications/read-all', { method: 'PUT', headers })
+      fetch(`${API_BASE}/api/notifications/read-all`, { method: 'PUT', headers })
         .then(() => loadNotifications())
-        .catch(err => console.error('Mark all read failed:', err));
+        .catch((err) => console.error('Mark all read failed:', err));
     }
   };
 
