@@ -12,7 +12,7 @@ const app = express();
 const server = http.createServer(app);
 
 // ======================
-// 🟢 Import Routes FIRST
+// 🟢 Import Routes
 // ======================
 const authRoutes = require('./routes/auth');
 const noticeRoutes = require('./routes/notices');
@@ -23,14 +23,18 @@ const notificationRoutes = require('./routes/notifications');
 const dashboardRoutes = require('./routes/dashboard');
 
 // ======================
-// 🟢 Middleware
+// 🟢 Middleware (CORS + JSON Parsing)
 // ======================
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : '*',
+  origin:
+    process.env.NODE_ENV === 'production'
+      ? process.env.FRONTEND_URL
+      : '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,29 +42,40 @@ app.use(express.urlencoded({ extended: true }));
 // 🟢 MongoDB Connection
 // ======================
 const connectWithRetry = () => {
-  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/scnbcp', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-  .then(() => {
-    console.log('✅ MongoDB Connected Successfully');
-  })
-  .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err);
-    console.log('Retrying connection in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
-  });
+  mongoose
+    .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/scnbcp', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    })
+    .then(() => {
+      console.log('✅ MongoDB Connected Successfully');
+    })
+    .catch(err => {
+      console.error('❌ MongoDB Connection Error:', err);
+      console.log('Retrying connection in 5 seconds...');
+      setTimeout(connectWithRetry, 5000);
+    });
 };
 connectWithRetry();
 
 // ======================
-// 🟢 Socket.io Initialization
+// 🟢 Socket.io Initialization (with proper CORS setup)
 // ======================
-const io = socketService.initSocket(server);
+const { Server } = require('socket.io');
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  path: process.env.SOCKET_PATH || '/socket.io'
+});
+
+socketService.init(io);
 app.set('io', io);
 
 // ======================
-// 🟢 Mount Routes (Now Safe)
+// 🟢 Routes
 // ======================
 app.use('/api/auth', authRoutes);
 app.use('/api/notices', noticeRoutes);
@@ -74,7 +89,7 @@ app.use('/api/dashboard', dashboardRoutes);
 // 🟢 Health Check
 // ======================
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'SCNBCP Server Running' });
+  res.json({ status: 'OK', message: 'Smart Notice Board Backend Running' });
 });
 
 // ======================
@@ -82,10 +97,10 @@ app.get('/api/health', (req, res) => {
 // ======================
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
-    message: 'Something went wrong!', 
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
