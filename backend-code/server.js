@@ -63,7 +63,7 @@ connectWithRetry();
 // ======================
 // 🟢 Socket.io Initialization (through socketService)
 // ======================
-const io = socketService.init(server);
+const io = socketService.initSocket(server);
 app.set('io', io);
 
 // ======================
